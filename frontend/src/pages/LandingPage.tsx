@@ -49,12 +49,12 @@ const LandingPage: React.FC = () => {
                 poliSEE
               </span>
             </div>
-            
+
             <div className="hidden md:flex items-center gap-10 text-xs font-bold uppercase tracking-widest text-white/40">
               <a href="#features" className="hover:text-solaris-cyan transition-colors">Intelligence</a>
               <a href="#methodology" className="hover:text-solaris-cyan transition-colors">Framework</a>
-              <Link 
-                to="/dashboard" 
+              <Link
+                to="/dashboard"
                 className="relative group px-6 py-2 rounded-full overflow-hidden"
               >
                 <div className="absolute inset-0 bg-white group-hover:bg-solaris-cyan transition-colors"></div>
@@ -67,7 +67,7 @@ const LandingPage: React.FC = () => {
 
       {/* Hero Section */}
       <section className="relative pt-44 pb-32 px-6 flex flex-col items-center min-h-screen">
-        <motion.div 
+        <motion.div
           className="max-w-6xl mx-auto text-center relative z-10"
           variants={containerVariants}
           initial="hidden"
@@ -95,8 +95,8 @@ const LandingPage: React.FC = () => {
           {/* Core Visual Backdrop */}
           <div className="relative mb-20">
             <div className="absolute inset-0 -top-20 -bottom-20 bg-solaris-cyan/5 blur-[100px] rounded-full pointer-events-none"></div>
-            
-            <motion.h1 
+
+            <motion.h1
               variants={itemVariants}
               className="text-7xl md:text-[10rem] font-display font-bold tracking-tighter mb-10 leading-[0.85] text-white relative z-20"
             >
@@ -104,18 +104,18 @@ const LandingPage: React.FC = () => {
               <span className="text-gradient animate-glow">Unpredictable</span>
             </motion.h1>
 
-            <motion.p 
+            <motion.p
               variants={itemVariants}
               className="text-lg md:text-xl text-white/50 max-w-2xl mx-auto mb-14 leading-relaxed font-light relative z-20"
             >
-              PoliSEE utilizes advanced agent-based modeling to illuminate the complex web of 
+              PoliSEE utilizes advanced agent-based modeling to illuminate the complex web of
               unintended consequences in large-scale policy interventions.
             </motion.p>
           </div>
 
           <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-6 relative z-30">
-            <Link 
-              to="/dashboard" 
+            <Link
+              to="/dashboard"
               className="group relative px-12 py-6 bg-transparent rounded-2xl font-bold text-lg transition-all overflow-hidden flex items-center gap-4 border border-solaris-cyan/30"
             >
               <div className="absolute inset-0 bg-solaris-cyan/10 group-hover:bg-solaris-cyan/20 transition-all"></div>
@@ -127,9 +127,9 @@ const LandingPage: React.FC = () => {
 
         {/* Global Engine Image Overlay */}
         <div className="absolute top-0 inset-x-0 h-full pointer-events-none opacity-30 overflow-hidden">
-           <img 
-            src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=2072" 
-            alt="Simulation Engine" 
+           <img
+            src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=2072"
+            alt="Simulation Engine"
             className="w-full h-full object-cover mix-blend-screen scale-150 origin-top animate-float-slow"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-solaris-bg/50 to-solaris-bg"></div>
@@ -143,7 +143,7 @@ const LandingPage: React.FC = () => {
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">Analytical Architecture</h2>
             <p className="text-white/40 max-w-xl mx-auto">Our multi-layered simulation engine processes thousands of agent interactions simultaneously.</p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
@@ -193,7 +193,7 @@ const LandingPage: React.FC = () => {
               <p className="text-white/50 text-lg leading-relaxed mb-10">
                 Traditional economic models often fail because they treat humans as simple, rational nodes. Our framework leverages <strong>Deep Agentic Integration</strong> to simulate irrationality, community pressure, and second-order feedback loops.
               </p>
-              
+
               <div className="space-y-6">
                 {[
                   { title: "Dynamic Equilibrium", desc: "Unlike static models, Solaris adapts market valuations based on real-time agent utility depletion." },
@@ -210,7 +210,7 @@ const LandingPage: React.FC = () => {
                 ))}
               </div>
             </motion.div>
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -220,9 +220,9 @@ const LandingPage: React.FC = () => {
             >
               <div className="absolute -inset-10 bg-solaris-cyan/10 blur-[80px] rounded-full"></div>
               <div className="solaris-glass p-1 relative z-10 overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1639322537228-f710d846310a?auto=format&fit=crop&q=80&w=2000" 
-                  alt="Complexity Matrix" 
+                <img
+                  src="https://images.unsplash.com/photo-1639322537228-f710d846310a?auto=format&fit=crop&q=80&w=2000"
+                  alt="Complexity Matrix"
                   className="w-full aspect-square object-cover opacity-80"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-solaris-bg via-transparent to-transparent"></div>
@@ -247,7 +247,7 @@ const LandingPage: React.FC = () => {
               </div>
               <p className="text-white/20 text-sm italic">Forging clarity from economic complexity.</p>
             </div>
-            
+
             <div className="flex flex-col items-center md:items-end gap-6 text-sm font-bold uppercase tracking-widest text-white/40">
               <div className="flex gap-10">
                 <a href="#" className="hover:text-solaris-cyan transition-colors">Privacy</a>

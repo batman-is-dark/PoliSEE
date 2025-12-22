@@ -11,7 +11,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Zap,
-  ShieldAlert
+  ShieldAlert,
+  Languages
 } from "lucide-react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -56,6 +57,7 @@ const Dashboard: React.FC = () => {
   const [neighborhoods, setNeighborhoods] = useState<any>(null);
   const [explanationText, setExplanationText] = useState<string>("");
   const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [languageMode, setLanguageMode] = useState<"layman" | "technical">("layman");
 
   useEffect(() => {
     if (policyType === "housing_rent_subsidy") {
@@ -92,6 +94,32 @@ const Dashboard: React.FC = () => {
     runSimulation();
   }, []);
 
+  const exportToCSV = () => {
+    if (!history || history.length === 0) return;
+
+    const headers = ['Step', 'Average Price', 'Gini Index', 'Compliance Rate', 'Average Stress'];
+    const csvContent = [
+      headers.join(','),
+      ...history.map(row => [
+        row.step,
+        row.avg_price.toFixed(2),
+        row.gini.toFixed(4),
+        row.compliance_rate.toFixed(4),
+        row.avg_stress.toFixed(4)
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `polisee-simulation-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getUCIColor = (uci: number) => {
     if (uci < 0.3) return "text-emerald-400";
     if (uci < 0.6) return "text-amber-400";
@@ -101,7 +129,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden font-sans">
       {/* Sidebar */}
-      <motion.aside 
+      <motion.aside
         initial={{ x: -300 }}
         animate={{ x: 0 }}
         className="w-80 border-r border-white/5 bg-[#0d0d0f] flex flex-col z-20"
@@ -238,7 +266,7 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={runSimulation}
                 disabled={loading}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-white/5 disabled:text-white/20 text-white rounded-2xl font-bold transition-all shadow-lg shadow-indigo-600/20 active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-white/5 disabled:to-white/5 disabled:text-white/20 text-white rounded-2xl font-bold transition-all shadow-lg shadow-indigo-600/30 active:scale-[0.98] border border-indigo-500/20 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -292,33 +320,33 @@ const Dashboard: React.FC = () => {
         {/* Dashboard Content */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
           <div className="max-w-7xl mx-auto space-y-8">
-            
+
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {[
-                { 
-                  label: "Avg Price", 
+                {
+                  label: "Avg Price",
                   value: history?.length ? `$${history[history.length - 1].avg_price.toFixed(2)}` : "-",
                   trend: "+2.4%",
                   up: true,
                   icon: <Activity className="text-indigo-400" size={20} />
                 },
-                { 
-                  label: "Compliance", 
+                {
+                  label: "Compliance",
                   value: history?.length ? `${(history[history.length - 1].compliance_rate * 100).toFixed(1)}%` : "-",
                   trend: "-0.8%",
                   up: false,
                   icon: <ShieldAlert className="text-emerald-400" size={20} />
                 },
-                { 
-                  label: "Gini Index", 
+                {
+                  label: "Gini Index",
                   value: history?.length ? history[history.length - 1].gini.toFixed(3) : "-",
                   trend: "+0.01",
                   up: true,
                   icon: <Users className="text-purple-400" size={20} />
                 },
-                { 
-                  label: "UCI Score", 
+                {
+                  label: "UCI Score",
                   value: analysis ? analysis.unintended_consequence_index.toFixed(2) : "-",
                   trend: "Critical",
                   up: true,
@@ -357,8 +385,15 @@ const Dashboard: React.FC = () => {
                     <p className="text-sm text-white/40">Price and stress evolution over 24 months</p>
                   </div>
                   <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-white/10 rounded-xl text-xs font-bold hover:bg-white/20 transition-all">Export CSV</button>
-                    <button className="px-4 py-2 bg-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-500 transition-all">Full View</button>
+                    <motion.button
+                      onClick={exportToCSV}
+                      disabled={!history || history.length === 0}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-300 hover:from-emerald-500/30 hover:to-teal-500/30 hover:border-emerald-400/50 hover:text-emerald-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-emerald-500/20 disabled:hover:to-teal-500/20 disabled:hover:border-emerald-500/30 disabled:hover:text-emerald-300 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20"
+                    >
+                      Export CSV
+                    </motion.button>
                   </div>
                 </div>
                 <div className="h-[400px]">
@@ -374,13 +409,85 @@ const Dashboard: React.FC = () => {
                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
                     <Zap size={120} />
                   </div>
-                  <h3 className="text-xl font-bold mb-4 relative z-10">AI Explanation</h3>
-                  <p className="text-white/80 text-sm leading-relaxed mb-6 relative z-10">
-                    {explanationText || "Run a simulation to generate a causal analysis of the policy impact."}
-                  </p>
-                  <button className="w-full py-3 bg-white text-indigo-600 rounded-2xl font-bold text-sm hover:bg-indigo-50 transition-all relative z-10">
-                    Deep Dive Analysis
-                  </button>
+                  <h3 className="text-xl font-bold mb-4 relative z-10">
+                    AI Explanation {languageMode === "technical" && "(Technical)"}
+                  </h3>
+                  <div className="text-white/80 text-sm leading-relaxed mb-6 relative z-10">
+                    {languageMode === "technical" ? (
+                      <div className="space-y-3">
+                        {analysis ? (
+                          <>
+                            <div className="grid grid-cols-2 gap-4 text-xs">
+                              <div>
+                                <span className="text-white/60">UCI Score:</span>
+                                <span className="ml-2 font-mono">{analysis.unintended_consequence_index.toFixed(3)}</span>
+                              </div>
+                              <div>
+                                <span className="text-white/60">Price Acceleration:</span>
+                                <span className="ml-2 font-mono">{analysis.metrics.price_acceleration.toFixed(3)}</span>
+                              </div>
+                              <div>
+                                <span className="text-white/60">Volatility:</span>
+                                <span className="ml-2 font-mono">{analysis.metrics.volatility.toFixed(3)}</span>
+                              </div>
+                              <div>
+                                <span className="text-white/60">Compliance Instability:</span>
+                                <span className="ml-2 font-mono">{analysis.metrics.compliance_instability.toFixed(3)}</span>
+                              </div>
+                            </div>
+                            <div className="pt-3 border-t border-white/20">
+                              <p className="text-xs text-white/70">{explanationText}</p>
+                            </div>
+                          </>
+                        ) : (
+                          <p>Run a simulation to generate detailed technical analysis.</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p>
+                        {explanationText ?
+                          explanationText.replace(/Rapid price acceleration detected/g, "Prices are rising quickly")
+                            .replace(/score=/g, "at ")
+                            .replace(/Prices may spiral if unchecked/g, "This could cause prices to keep going up out of control")
+                            .replace(/Elevated price volatility observed/g, "Prices are changing a lot")
+                            .replace(/Market instability may be emerging/g, "The market might become unstable")
+                            .replace(/Consider phased implementation/g, "Think about rolling this out gradually")
+                            .replace(/Compliance instability detected/g, "People aren't following the rules consistently")
+                            .replace(/shadow-market behaviors/g, "underground or unofficial ways of doing things")
+                            .replace(/Inequality is improving while stress rises/g, "Some people are doing better while others are struggling more")
+                            .replace(/Target supply-side measures/g, "Focus on increasing what's available")
+                            .replace(/temporary price supports/g, "short-term price help")
+                            .replace(/Price behavior appears within expected bounds/g, "Prices are behaving normally")
+                            .replace(/Compliance levels are stable/g, "People are following the rules consistently")
+                          : "Run a simulation to see what might happen with this policy in plain terms."
+                        }
+                      </p>
+                    )}
+                  </div>
+                  <motion.button
+                    onClick={() => setLanguageMode(languageMode === "layman" ? "technical" : "layman")}
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full py-3 bg-white text-slate-800 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all duration-300 relative z-10 flex items-center justify-center gap-2 shadow-lg shadow-white/20 hover:shadow-white/30 border border-white/30 hover:border-white/50"
+                  >
+                    <motion.div
+                      animate={{ rotate: languageMode === "layman" ? 0 : 180 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Languages size={16} className="text-slate-600" />
+                    </motion.div>
+                    <span className="relative">
+                      {languageMode === "layman" ? "Technical Details" : "Simple Explanation"}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"
+                        initial={false}
+                        animate={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                      >
+                        {languageMode === "layman" ? "Technical Details" : "Simple Explanation"}
+                      </motion.div>
+                    </span>
+                  </motion.button>
                 </div>
 
                 <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8">
@@ -428,8 +535,8 @@ const Dashboard: React.FC = () => {
                           <div className="text-[10px] text-white/40">Current Price</div>
                         </div>
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-indigo-500" 
+                          <div
+                            className="h-full bg-indigo-500"
                             style={{ width: `${Math.min(100, (data.price / 500) * 100)}%` }}
                           />
                         </div>

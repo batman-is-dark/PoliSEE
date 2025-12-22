@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 
 from simulation.simulation_engine import SimulationEngine
-from simulation.policy_definitions import HousingRentSubsidy, LuxuryAssetTax, FoodPriceCeiling
+from simulation.policy_definitions import HousingRentSubsidy, FuelTaxWithRebate, FoodPriceCeiling
 from simulation.emergence_detector import EmergenceDetector
 from simulation.counterfactual_analysis import CounterfactualAnalyzer
 
@@ -40,10 +40,10 @@ async def run_simulation(request: SimulationRequest):
                 subsidy_amount=request.params.get("subsidy_amount", 200),
                 eligibility_threshold=request.params.get("eligibility_threshold", 1000)
             )
-        elif request.policy_type == "luxury_asset_tax":
-            policy = LuxuryAssetTax(
-                tax_rate=request.params.get("tax_rate", 0.05),
-                wealth_threshold=request.params.get("wealth_threshold", 2000)
+        elif request.policy_type == "fuel_tax_rebate":
+            policy = FuelTaxWithRebate(
+                tax_rate=request.params.get("tax_rate", 0.2),
+                rebate_percent=request.params.get("rebate_percent", 0.9)
             )
         elif request.policy_type == "food_price_ceiling":
             policy = FoodPriceCeiling(
