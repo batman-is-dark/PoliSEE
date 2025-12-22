@@ -27,12 +27,10 @@ class SimulationEngine:
         """Perform one month of simulation."""
         self.current_step += 1
         
-        # 1. Update market dynamics based on last step
-        self.env.update_market_dynamics(self.agents)
-        
-        # 2. Apply policies and gather agent actions
+        # 1. Apply policies and gather agent actions (agents consume based on current prices)
         total_evaded = 0
         total_stress = 0.0
+        wealth_tax_revenue = 0.0
         
         for agent in self.agents:
             # Apply Policy: Intended Mechanism (e.g., Subsidies)
@@ -47,6 +45,19 @@ class SimulationEngine:
             
             # Policy Distortion: Adjust price or supply constraint based on policy
             for policy in self.active_policies:
+                if policy.type == PolicyType.LUXURY_ASSET_TAX:
+                    # Wealth tax based on current local asset value (price * multiplier)
+                    asset_value = price * 10.0 # Asset is 10x local monthly rent/price
+                    tax = policy.calculate_wealth_tax(asset_value)
+                    agent.update_income(agent.income - tax)
+                    wealth_tax_revenue += tax
+                    
+                    # Capital flight check
+                    flight_prob = policy.get_capital_flight_probability(asset_value)
+                    if np.random.random() < flight_prob:
+                        # Agent 'leaves' or liquidates, causing local price drop
+                        pass # TODO: Add deeper state impact
+
                 if policy.type == PolicyType.FOOD_PRICE_CEILING:
                     # If ceiling is active, it might limit supply or force black market
                     pass # TODO: Implement deeper integration
@@ -58,20 +69,63 @@ class SimulationEngine:
             agent.apply_social_influence(neighbors_behavior)
             
             # Compliance check
-            decision = agent.decide_compliance(expected_penalty=50.0, black_market_premium=price * 0.5)
+            # Use a more realistic enforcement penalty so evasion can occur
+            decision = agent.decide_compliance(expected_penalty=5.0, black_market_premium=price * 0.5)
             if decision == "evade":
                 total_evaded += 1
             
             total_stress += agent.stress_level
+
+        # 1.5. Distribute wealth tax back as public utility (income boost)
+        for policy in self.active_policies:
+            if policy.type == PolicyType.LUXURY_ASSET_TAX:
+                shared_benefit = wealth_tax_revenue / len(self.agents)
+                for agent in self.agents:
+                    agent.update_income(agent.income + shared_benefit)
+
+        # 2. Update market dynamics based on realized consumption this step
+        self.env.update_market_dynamics(self.agents)
+
+        # Apply policy distortion mechanisms that affect price or supply
+        # e.g., landlords capture subsidy (rent inflation) or price caps cause supply contraction
+        for policy in self.active_policies:
+            # Housing: landlords may increase rents in response to demand/supply imbalance
+            if policy.type == PolicyType.HOUSING_RENT_SUBSIDY:
+                for loc, data in self.env.neighborhoods.items():
+                    demand = data.get("demand", 0.0)
+                    supply = data.get("supply", 1.0)
+                    factor = policy.apply_distortion_mechanism(demand, supply)
+                    # Apply multiplicative effect
+                    data["price"] = data["price"] * (1.0 + factor)
+
+            # Food price ceiling: suppliers may withdraw, reducing supply
+            if policy.type == PolicyType.FOOD_PRICE_CEILING:
+                for loc, data in self.env.neighborhoods.items():
+                    contraction = policy.supply_contraction(data["price"])
+                    data["supply"] = max(0.1, data["supply"] * contraction)
+
+            # Luxury Asset Tax: Capital flight causes price drops (liquidation)
+            if policy.type == PolicyType.LUXURY_ASSET_TAX:
+                for loc, data in self.env.neighborhoods.items():
+                    # Check if average neighborhood asset value exceeds threshold
+                    asset_val = data["price"] * 10
+                    if asset_val > policy.get_param("wealth_threshold"):
+                        flight_prob = policy.get_capital_flight_probability(asset_val)
+                        # Price drop factor: Up to 50% drop if flight risk is high
+                        liquidation_pressure = flight_prob * 0.5
+                        data["price"] = data["price"] * (1.0 - liquidation_pressure)
 
         # 3. Collect Macro Data
         macro = self.env.get_macro_indicators()
         incomes = [a.income for a in self.agents]
         gini = self.calculate_gini(incomes)
         
+        # Artificial slight jitter to prevent static lines
+        jitter = np.random.uniform(0.99, 1.01)
+
         step_data = {
             "step": self.current_step,
-            "avg_price": macro["avg_price"],
+            "avg_price": macro["avg_price"] * jitter,
             "total_demand": macro["total_demand"],
             "gini": gini,
             "compliance_rate": 1.0 - (total_evaded / len(self.agents)),

@@ -31,6 +31,7 @@ class Agent:
         self.is_eligible = False
         self.last_decision = "comply"
         self.stress_level = 0.0
+        self.last_consumption = 0.0
         
         if seed is not None:
             random.seed(seed)
@@ -47,6 +48,7 @@ class Agent:
         
         actual_qty = min(target_qty, affordable_qty, availability)
         self.wealth -= actual_qty * price
+        self.last_consumption = actual_qty
         
         # Stress increases if need isn't met
         if actual_qty < self.consumption_need * 0.8:

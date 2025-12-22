@@ -4,7 +4,7 @@ import enum
 
 class PolicyType(enum.Enum):
     HOUSING_RENT_SUBSIDY = "housing_rent_subsidy"
-    FUEL_TAX_REBATE = "fuel_tax_rebate"
+    LUXURY_ASSET_TAX = "luxury_asset_tax"
     FOOD_PRICE_CEILING = "food_price_ceiling"
 
 @dataclass
@@ -64,22 +64,34 @@ class HousingRentSubsidy(Policy):
         pressure = (market_demand / housing_supply)
         return max(0, (pressure - 1.0) * 0.5) # Returns a price increase factor
 
-class FuelTaxWithRebate(Policy):
+class LuxuryAssetTax(Policy):
     """
-    Policy: Tax fuel consumption and redistribute revenue as a flat rebate.
-    Intuition: Reduce emissions while protecting low-income households.
-    Distortion: High-mobility agents may face hidden costs or reduce necessary travel, 
-    while flat rebates might over-compensate low-use agents, leading to 'rebound effects'.
+    Policy: Apply a high tax rate on assets valued above a certain threshold.
+    Intuition: Extract revenue from idle wealth to fund public utility.
+    Distortion: Capital Flight. Wealthy agents may liquidate assets or relocate 
+    capital if the tax rate exceeds their perceived 'exit threshold'.
     """
-    def __init__(self, tax_rate: float = 0.2, rebate_percent: float = 0.9):
+    def __init__(self, tax_rate: float = 0.05, wealth_threshold: float = 2000):
         params = {
-            "tax_rate": PolicyParameter("Tax Rate", tax_rate, "Percentage tax on fuel sales", 0, 1),
-            "rebate_percent": PolicyParameter("Rebate Percent", rebate_percent, "Portion of tax revenue redistributed", 0, 1)
+            "tax_rate": PolicyParameter("Tax Rate", tax_rate, "Annual tax on luxury assets", 0, 0.2),
+            "wealth_threshold": PolicyParameter("Wealth Threshold", wealth_threshold, "Minimum asset value to trigger tax", 500, 10000)
         }
-        super().__init__(PolicyType.FUEL_TAX_REBATE, params)
+        super().__init__(PolicyType.LUXURY_ASSET_TAX, params)
 
-    def calculate_tax(self, consumption: float, price: float) -> float:
-        return consumption * price * self.get_param("tax_rate")
+    def calculate_wealth_tax(self, asset_value: float) -> float:
+        if asset_value > self.get_param("wealth_threshold"):
+            return (asset_value - self.get_param("wealth_threshold")) * self.get_param("tax_rate")
+        return 0.0
+
+    def get_capital_flight_probability(self, asset_value: float) -> float:
+        """Models the risk of agents moving capital out of the system."""
+        if asset_value <= self.get_param("wealth_threshold"): return 0.0
+        
+        # RISK AGGRESSION: Make it much more sensitive to tax rates
+        # Exposure is now relative to the threshold gap
+        exposure = (asset_value - self.get_param("wealth_threshold")) / 1000.0 # Normalized per $1000 over threshold
+        risk = exposure * self.get_param("tax_rate") * 20.0 # Doubled sensitivity
+        return min(0.9, risk)
 
 class FoodPriceCeiling(Policy):
     """
