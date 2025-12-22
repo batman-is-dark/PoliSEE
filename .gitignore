@@ -1,0 +1,13 @@
+node_modules/
+frontend/node_modules/
+dist/
+build/
+.env
+.venv/
+__pycache__/
+.idea/
+.vscode/
+.DS_Store
+/.vite
+# local VSCode settings
+settings.json
