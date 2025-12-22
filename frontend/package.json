@@ -20,6 +20,7 @@
     "tailwind-merge": "^1.14.0"
   },
   "devDependencies": {
+    "@types/babel__core": "^7.20.5",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
