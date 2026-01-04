@@ -30,37 +30,77 @@ class SimulationEngine:
         # 1. Apply policies and gather agent actions (agents consume based on current prices)
         total_evaded = 0
         total_stress = 0.0
+        total_tax_revenue = 0.0
         
+        # Dynamic enforcement: penalty increases if many policies are active (more scrutiny)
+        # or if evasion was high in the previous step
+        base_penalty = 2.0 + (len(self.active_policies) * 1.5)
+        if self.history:
+            prev_evasion = 1.0 - self.history[-1]["compliance_rate"]
+            base_penalty += prev_evasion * 10.0 # Increased enforcement in response to evasion
+        
+        # Pre-calculate policy effects that apply to all agents
+        fuel_tax_policy = next((p for p in self.active_policies if p.type == PolicyType.FUEL_TAX_REBATE), None)
+        luxury_tax_policy = next((p for p in self.active_policies if p.type == PolicyType.LUXURY_ASSET_TAX), None)
+
         for agent in self.agents:
+            # Replenish wealth for the new month
+            agent.update_income(agent.income)
+            
             # Apply Policy: Intended Mechanism (e.g., Subsidies)
             for policy in self.active_policies:
                 if policy.type == PolicyType.HOUSING_RENT_SUBSIDY:
                     new_income = policy.apply_intended_effect(agent.income)
-                    agent.update_income(new_income)
+                    # This adds the subsidy to the already replenished wealth
+                    agent.wealth += (new_income - agent.income)
+                    agent.income = new_income
             
             # Agent Decisions: Consumption & Compliance
             price = self.env.get_local_price(agent.id)
+            
+            # Apply Fuel Tax distortion to price
+            if fuel_tax_policy:
+                price = fuel_tax_policy.apply_price_distortion(price)
+
             availability = self.env.get_local_availability(agent.id)
             
-            # Policy Distortion: Adjust price or supply constraint based on policy
-            for policy in self.active_policies:
-                if policy.type == PolicyType.FOOD_PRICE_CEILING:
-                    # If ceiling is active, it might limit supply or force black market
-                    pass # TODO: Implement deeper integration
+            actual_qty = agent.decide_consumption(price, availability)
             
-            agent.decide_consumption(price, availability)
-            
+            # Collect Fuel Tax revenue
+            if fuel_tax_policy:
+                tax_paid = actual_qty * price * (fuel_tax_policy.get_param("tax_rate") / (1 + fuel_tax_policy.get_param("tax_rate")))
+                total_tax_revenue += tax_paid
+
+            # Apply Luxury Tax
+            if luxury_tax_policy:
+                tax = luxury_tax_policy.calculate_wealth_tax(agent.wealth)
+                agent.wealth -= tax
+                total_tax_revenue += tax
+                
+                # Capital Flight check
+                if np.random.random() < luxury_tax_policy.get_capital_flight_probability(agent.wealth):
+                    # Agent "hides" or moves 50% of wealth out of the system
+                    agent.wealth *= 0.5
+                    agent.stress_level = min(1.0, agent.stress_level + 0.2)
+
             # Social influence check
             neighbors_behavior = self.env.get_neighbors_behavior(agent.id, self.agents_dict)
             agent.apply_social_influence(neighbors_behavior)
             
             # Compliance check
-            # Use a more realistic enforcement penalty so evasion can occur
-            decision = agent.decide_compliance(expected_penalty=5.0, black_market_premium=price * 0.5)
+            bm_premium = price * 0.6 
+            decision = agent.decide_compliance(expected_penalty=base_penalty, black_market_premium=bm_premium)
             if decision == "evade":
                 total_evaded += 1
             
             total_stress += agent.stress_level
+
+        # Redistribute Fuel Tax Rebates
+        if fuel_tax_policy and total_tax_revenue > 0:
+            for agent in self.agents:
+                rebate = fuel_tax_policy.apply_intended_effect(agent.income, total_tax_revenue, len(self.agents))
+                agent.wealth += (rebate - agent.income)
+                # Note: we don't update agent.income permanently here as it's a one-time rebate per step
 
         # 2. Update market dynamics based on realized consumption this step
         self.env.update_market_dynamics(self.agents)

@@ -9,10 +9,10 @@
   --color-indigo-500: #6366f1;
   --color-indigo-600: #4f46e5;
   
-  /* Solaris Theme Colors */
-  --color-solaris-bg: #0a0a0c;
-  --color-solaris-cyan: #00f0ff;
-  --color-solaris-gold: #ffd700;
+  /* PoliSEE Theme Colors */
+  --color-app-bg: #0a0a0c;
+  --color-accent-cyan: #00f0ff;
+  --color-accent-gold: #ffd700;
 }
 
 :root {
@@ -35,20 +35,61 @@ body, button, input, select, textarea {
   color: inherit;
 }
 
+/* Ensure native select dropdowns and options use the dark theme colors
+   Many browsers render a white dropdown background by default; explicitly
+   style option elements to match the app theme. */
+select, select option {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Improve contrast for option hover/active states */
+select option:hover, select option:focus {
+  background-color: rgba(255,255,255,0.03) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Remove native arrow background on some browsers and keep appearance consistent */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
 @layer base {
   body {
     @apply bg-[#0a0a0c] text-white antialiased;
     margin: 0;
+    overflow-x: hidden;
   }
 }
 
 @layer components {
+  .mesh-gradient {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: 
+      radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(147, 51, 234, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+    filter: blur(100px);
+  }
+
   .glass-card {
-    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-[2rem];
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 2rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   }
   
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
@@ -56,48 +97,159 @@ body, button, input, select, textarea {
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full hover:bg-white/20;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 9999px;
   }
 
-  /* Solaris Theme Components */
-  .solaris-glass {
-    @apply bg-white/[0.02] backdrop-blur-xl border border-white/[0.05] rounded-2xl;
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.1);
   }
 
-  .solaris-card {
-    @apply bg-white/[0.02] backdrop-blur-xl border border-white/[0.08] rounded-3xl;
+  /* PoliSEE Theme Components */
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 1rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .card-panel {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .premium-button {
+    position: relative;
+    overflow: hidden;
+    padding: 0.75rem 1.5rem;
+    border-radius: 1rem;
+    font-weight: bold;
+    transition: all 0.3s;
+    transform: scale(1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+  }
+
+  .premium-button:hover {
+    box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+    transform: translateY(-2px) scale(1);
+  }
+
+  .premium-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .premium-button:hover::after {
+    opacity: 1;
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-solaris-cyan to-blue-400;
+    background: linear-gradient(to right, #00f0ff, #3b82f6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
   }
 
-  .bg-solaris-bg {
-    background-color: var(--color-solaris-bg);
+  .bg-app-bg {
+    background-color: var(--color-app-bg);
   }
 
-  .text-solaris-cyan {
-    color: var(--color-solaris-cyan);
+  .text-accent-cyan {
+    color: var(--color-accent-cyan);
   }
 
-  .text-solaris-gold {
-    color: var(--color-solaris-gold);
+  .text-accent-gold {
+    color: var(--color-accent-gold);
   }
 
-  .bg-solaris-cyan {
-    background-color: var(--color-solaris-cyan);
+  .bg-accent-cyan {
+    background-color: var(--color-accent-cyan);
   }
 
-  .bg-solaris-gold {
-    background-color: var(--color-solaris-gold);
+  .bg-accent-gold {
+    background-color: var(--color-accent-gold);
   }
 
-  .border-solaris-cyan {
-    border-color: var(--color-solaris-cyan);
+  /* Enhanced controls */
+  .range-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 9999px;
+    outline: none;
+    transition: background 0.2s;
+  }
+  .range-slider:hover {
+    background: rgba(255,255,255,0.06);
+  }
+  .range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg,#7c3aed,#4f46e5);
+    box-shadow: 0 4px 12px rgba(79,70,229,0.45), 0 1px 0 rgba(255,255,255,0.06) inset;
+    border: 2px solid rgba(255,255,255,0.06);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .range-slider:active::-webkit-slider-thumb { transform: scale(0.95); }
+  .range-slider::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 9999px; background: linear-gradient(135deg,#7c3aed,#4f46e5);
+    box-shadow: 0 4px 12px rgba(79,70,229,0.45);
+    border: 2px solid rgba(255,255,255,0.06);
   }
 
-  .border-solaris-gold {
-    border-color: var(--color-solaris-gold);
+  /* Methodology button in header */
+  .method-button {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.6rem 0.9rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+    color: rgba(255,255,255,0.7);
+    font-weight: 700;
+    transition: all 0.18s ease;
+  }
+  .method-button:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(90deg, rgba(79,70,229,0.12), rgba(124,58,237,0.08));
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(79,70,229,0.12);
+  }
+
+  /* Technical mode toggle inside AI Insights */
+  .tech-toggle {
+    background: linear-gradient(90deg,#6d28d9,#a855f7);
+    color: white !important;
+    border: 0;
+    box-shadow: 0 12px 30px rgba(107,70,193,0.22);
+  }
+  .tech-toggle:hover { transform: translateY(-3px); }
+
+  .border-accent-cyan {
+    border-color: var(--color-accent-cyan);
+  }
+
+  .border-accent-gold {
+    border-color: var(--color-accent-gold);
   }
 }
 

@@ -6,6 +6,7 @@ class PolicyType(enum.Enum):
     HOUSING_RENT_SUBSIDY = "housing_rent_subsidy"
     LUXURY_ASSET_TAX = "luxury_asset_tax"
     FOOD_PRICE_CEILING = "food_price_ceiling"
+    FUEL_TAX_REBATE = "fuel_tax_rebate"
 
 @dataclass
 class PolicyParameter:
@@ -115,3 +116,26 @@ class FoodPriceCeiling(Policy):
             gap = (market_price - cap) / market_price
             return max(0.1, 1.0 - (gap * self.get_param("supply_sensitivity")))
         return 1.0
+
+class FuelTaxWithRebate(Policy):
+    """
+    Policy: Tax fuel consumption and redistribute revenue as a flat rebate.
+    Intuition: Discourage high-carbon behavior while protecting low-income households.
+    Distortion: Regressive impact if rebate is delayed or if low-income agents 
+    have inelastic demand (e.g., long commutes).
+    """
+    def __init__(self, tax_rate: float = 0.2, rebate_percent: float = 0.9):
+        params = {
+            "tax_rate": PolicyParameter("Tax Rate", tax_rate, "Additional tax on fuel/energy", 0, 1.0),
+            "rebate_percent": PolicyParameter("Rebate Percent", rebate_percent, "Percentage of tax revenue redistributed", 0, 1.0)
+        }
+        super().__init__(PolicyType.FUEL_TAX_REBATE, params)
+
+    def apply_intended_effect(self, agent_income: float, total_tax_collected: float, population_size: int) -> float:
+        """Redistributes tax revenue as a flat rebate to all agents."""
+        rebate = (total_tax_collected * self.get_param("rebate_percent")) / max(1, population_size)
+        return agent_income + rebate
+
+    def apply_price_distortion(self, base_price: float) -> float:
+        """Increases the effective price for agents."""
+        return base_price * (1.0 + self.get_param("tax_rate"))

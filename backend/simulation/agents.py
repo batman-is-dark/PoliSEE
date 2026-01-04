@@ -50,12 +50,16 @@ class Agent:
         self.wealth -= actual_qty * price
         self.last_consumption = actual_qty
         
-        # Stress increases if need isn't met
+        # Stress increases if need isn't met, decreases if satisfied
         if actual_qty < self.consumption_need * 0.8:
-            self.stress_level += 0.1
+            # Stress increases faster if the gap is larger
+            gap = (self.consumption_need * 0.8 - actual_qty) / (self.consumption_need * 0.8)
+            self.stress_level += 0.05 + (gap * 0.15)
         else:
-            self.stress_level = max(0, self.stress_level - 0.05)
+            # Stress decreases if needs are met, but slower than it increases
+            self.stress_level -= 0.03
             
+        self.stress_level = max(0.0, min(1.0, self.stress_level))
         return actual_qty
 
     def decide_compliance(self, expected_penalty: float, black_market_premium: float) -> str:
@@ -63,12 +67,23 @@ class Agent:
         Decision rule for compliance or evasion (e.g., black market).
         Factors: Risk tolerance, peer influence, and economic incentive.
         """
-        # Simplified expected utility of evasion vs compliance
-        evasion_benefit = black_market_premium * (1.0 - self.risk_tolerance)
-        if evasion_benefit > expected_penalty * self.compliance_probability:
-            if random.random() > self.compliance_probability:
-                self.last_decision = "evade"
-                return "evade"
+        # Agents with high stress are more desperate and likely to evade
+        effective_risk_tolerance = self.risk_tolerance * (1.0 + self.stress_level)
+        
+        # Economic incentive: benefit vs cost
+        # If benefit is high relative to penalty, evasion is more likely
+        incentive = black_market_premium / max(0.1, expected_penalty)
+        
+        # Probabilistic decision: higher incentive and higher risk tolerance -> higher evasion prob
+        # We use a sigmoid-like function for the probability
+        evasion_prob = 1.0 / (1.0 + np.exp(-(2.0 * incentive + 5.0 * (effective_risk_tolerance - 0.7))))
+        
+        # Factor in the agent's inherent compliance probability (socialized trait)
+        final_evasion_prob = evasion_prob * (1.0 - self.compliance_probability)
+        
+        if random.random() < final_evasion_prob:
+            self.last_decision = "evade"
+            return "evade"
         
         self.last_decision = "comply"
         return "comply"
@@ -98,8 +113,10 @@ class Agent:
         return False
 
     def update_income(self, new_income: float):
+        """Update monthly income and replenish wealth for the new month."""
         self.income = new_income
-        self.wealth += (new_income - self.base_income)
+        # Wealth is replenished by the full monthly income
+        self.wealth += self.income
         self.base_income = new_income
 
     def __repr__(self):

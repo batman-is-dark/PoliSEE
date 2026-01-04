@@ -12,7 +12,8 @@ import {
   ArrowDownRight,
   Zap,
   ShieldAlert,
-  Languages
+  Languages,
+  Globe
 } from "lucide-react";
 import axios from "axios";
 import { Link } from "react-router-dom";
@@ -58,6 +59,7 @@ const Dashboard: React.FC = () => {
   const [explanationText, setExplanationText] = useState<string>("");
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [languageMode, setLanguageMode] = useState<"layman" | "technical">("layman");
+  const [showMethodology, setShowMethodology] = useState(false);
 
   useEffect(() => {
     if (policyType === "housing_rent_subsidy") {
@@ -66,13 +68,15 @@ const Dashboard: React.FC = () => {
       setParams({ tax_rate: 0.2, rebate_percent: 0.9 });
     } else if (policyType === "food_price_ceiling") {
       setParams({ price_cap: 5.0 });
+    } else if (policyType === "luxury_asset_tax") {
+      setParams({ tax_rate: 0.05, wealth_threshold: 2000 });
     }
   }, [policyType]);
 
   const runSimulation = async () => {
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "https://polisee-joi4.onrender.com";
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
       const resp = await axios.post(`${apiUrl}/simulate`, {
         policy_type: policyType,
         params,
@@ -126,42 +130,64 @@ const Dashboard: React.FC = () => {
     return "text-rose-400";
   };
 
+  const pct = (value: number, min: number, max: number) => {
+    const v = Number(value ?? 0);
+    const m = Number(min ?? 0);
+    const M = Number(max ?? 1);
+    if (M === m) return 0;
+    return Math.max(0, Math.min(100, ((v - m) / (M - m)) * 100));
+  };
+
   return (
-    <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#0a0a0c] text-white overflow-hidden font-sans relative">
+      {/* Cinematic background similar to LandingPage */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-accent-cyan/10 blur-[150px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[150px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-accent-gold/5 blur-[120px] rounded-full" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+      </div>
+      
       {/* Sidebar */}
       <motion.aside
         initial={{ x: -300 }}
         animate={{ x: 0 }}
-        className="w-80 border-r border-white/5 bg-[#0d0d0f] flex flex-col z-20"
+        className="w-80 border-r border-white/5 bg-black/20 backdrop-blur-3xl flex flex-col z-20"
       >
-        <div className="p-6 flex items-center gap-3 border-b border-white/5">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-            <Activity size={18} className="text-white" />
+        <div className="p-8 flex items-center gap-4 border-b border-white/5">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Activity size={20} className="text-white" />
           </div>
-          <Link to="/" className="text-xl font-display font-bold tracking-tight text-white hover:text-indigo-400 transition-colors">
+          <Link to="/" className="text-2xl font-display font-bold tracking-tight text-white hover:text-indigo-400 transition-colors">
             poliSEE
           </Link>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
           <section>
-            <div className="flex items-center gap-2 text-white/40 text-xs font-bold uppercase tracking-widest mb-6">
-              <Settings2 size={14} />
+            <div className="flex items-center gap-2 text-white/30 text-[10px] font-bold uppercase tracking-[0.2em] mb-8">
+              <Settings2 size={12} />
               <span>Configuration</span>
             </div>
 
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/60">Policy Class</label>
-                <select
-                  value={policyType}
-                  onChange={(e) => setPolicyType(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all appearance-none cursor-pointer"
-                >
-                  <option value="housing_rent_subsidy">Housing Rent Subsidy</option>
-                  <option value="fuel_tax_rebate">Fuel Tax with Rebates</option>
-                  <option value="food_price_ceiling">Food Price Ceiling</option>
-                </select>
+            <div className="space-y-8">
+              <div className="space-y-3">
+                <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Policy Class</label>
+                <div className="relative group">
+                  <select
+                    value={policyType}
+                    onChange={(e) => setPolicyType(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all appearance-none cursor-pointer group-hover:bg-white/10"
+                  >
+                    <option value="housing_rent_subsidy">Housing Rent Subsidy</option>
+                    <option value="fuel_tax_rebate">Fuel Tax with Rebates</option>
+                    <option value="food_price_ceiling">Food Price Ceiling</option>
+                    <option value="luxury_asset_tax">Luxury Asset Tax</option>
+                  </select>
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover:text-white/40 transition-colors">
+                    <ChevronRight className="rotate-90" size={16} />
+                  </div>
+                </div>
               </div>
 
               {/* Dynamic Params */}
@@ -171,14 +197,14 @@ const Dashboard: React.FC = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="space-y-6"
+                  className="space-y-8"
                 >
                   {policyType === "housing_rent_subsidy" && (
                     <>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-white/60">Subsidy Amount</span>
-                          <span className="font-mono text-indigo-400">${params.subsidy_amount}</span>
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-white/40 uppercase tracking-wider">Subsidy Amount</span>
+                          <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">${params.subsidy_amount}</span>
                         </div>
                         <input
                           type="range"
@@ -187,13 +213,14 @@ const Dashboard: React.FC = () => {
                           step="10"
                           value={params.subsidy_amount || 200}
                           onChange={(e) => setParams({ ...params, subsidy_amount: Number(e.target.value) })}
-                          className="w-full accent-indigo-500"
+                          className="range-slider w-full accent-indigo-500 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer"
+                          style={{ background: `linear-gradient(90deg,#7c3aed ${pct(params.subsidy_amount||200,0,1000)}%, rgba(255,255,255,0.04) ${pct(params.subsidy_amount||200,0,1000)}%)` }}
                         />
                       </div>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-white/60">Eligibility Threshold</span>
-                          <span className="font-mono text-indigo-400">${params.eligibility_threshold}</span>
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-white/40 uppercase tracking-wider">Eligibility Threshold</span>
+                          <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">${params.eligibility_threshold}</span>
                         </div>
                         <input
                           type="range"
@@ -202,7 +229,8 @@ const Dashboard: React.FC = () => {
                           step="100"
                           value={params.eligibility_threshold || 1000}
                           onChange={(e) => setParams({ ...params, eligibility_threshold: Number(e.target.value) })}
-                          className="w-full accent-indigo-500"
+                          className="range-slider w-full accent-indigo-500 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer"
+                          style={{ background: `linear-gradient(90deg,#7c3aed ${pct(params.eligibility_threshold||1000,500,5000)}%, rgba(255,255,255,0.04) ${pct(params.eligibility_threshold||1000,500,5000)}%)` }}
                         />
                       </div>
                     </>
@@ -210,10 +238,10 @@ const Dashboard: React.FC = () => {
 
                   {policyType === "fuel_tax_rebate" && (
                     <>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-white/60">Tax Rate</span>
-                          <span className="font-mono text-indigo-400">{(params.tax_rate * 100).toFixed(0)}%</span>
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-white/40 uppercase tracking-wider">Tax Rate</span>
+                          <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">{(params.tax_rate * 100).toFixed(0)}%</span>
                         </div>
                         <input
                           type="range"
@@ -222,13 +250,14 @@ const Dashboard: React.FC = () => {
                           step="0.05"
                           value={params.tax_rate || 0.2}
                           onChange={(e) => setParams({ ...params, tax_rate: Number(e.target.value) })}
-                          className="w-full accent-indigo-500"
+                          className="range-slider w-full accent-indigo-500 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer"
+                          style={{ background: `linear-gradient(90deg,#7c3aed ${pct(params.tax_rate||0.2,0,1)}%, rgba(255,255,255,0.04) ${pct(params.tax_rate||0.2,0,1)}%)` }}
                         />
                       </div>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-white/60">Rebate Percent</span>
-                          <span className="font-mono text-indigo-400">{(params.rebate_percent * 100).toFixed(0)}%</span>
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-white/40 uppercase tracking-wider">Rebate Percent</span>
+                          <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">{(params.rebate_percent * 100).toFixed(0)}%</span>
                         </div>
                         <input
                           type="range"
@@ -237,17 +266,18 @@ const Dashboard: React.FC = () => {
                           step="0.05"
                           value={params.rebate_percent || 0.9}
                           onChange={(e) => setParams({ ...params, rebate_percent: Number(e.target.value) })}
-                          className="w-full accent-indigo-500"
+                          className="range-slider w-full accent-indigo-500 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer"
+                          style={{ background: `linear-gradient(90deg,#7c3aed ${pct(params.rebate_percent||0.9,0,1)}%, rgba(255,255,255,0.04) ${pct(params.rebate_percent||0.9,0,1)}%)` }}
                         />
                       </div>
                     </>
                   )}
 
                   {policyType === "food_price_ceiling" && (
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-white/60">Price Cap</span>
-                        <span className="font-mono text-indigo-400">${params.price_cap}</span>
+                    <div className="space-y-4">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-white/40 uppercase tracking-wider">Price Cap</span>
+                        <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">${params.price_cap}</span>
                       </div>
                       <input
                         type="range"
@@ -256,9 +286,47 @@ const Dashboard: React.FC = () => {
                         step="0.5"
                         value={params.price_cap || 5.0}
                         onChange={(e) => setParams({ ...params, price_cap: Number(e.target.value) })}
-                        className="w-full accent-indigo-500"
+                        className="range-slider w-full accent-indigo-500 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer"
+                        style={{ background: `linear-gradient(90deg,#7c3aed ${pct(params.price_cap||5.0,1,20)}%, rgba(255,255,255,0.04) ${pct(params.price_cap||5.0,1,20)}%)` }}
                       />
                     </div>
+                  )}
+
+                  {policyType === "luxury_asset_tax" && (
+                    <>
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-white/40 uppercase tracking-wider">Tax Rate</span>
+                          <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">{(params.tax_rate * 100).toFixed(0)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="0.2"
+                          step="0.01"
+                          value={params.tax_rate || 0.05}
+                          onChange={(e) => setParams({ ...params, tax_rate: Number(e.target.value) })}
+                          className="range-slider w-full accent-indigo-500 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer"
+                          style={{ background: `linear-gradient(90deg,#7c3aed ${pct(params.tax_rate||0.05,0,0.2)}%, rgba(255,255,255,0.04) ${pct(params.tax_rate||0.05,0,0.2)}%)` }}
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-white/40 uppercase tracking-wider">Wealth Threshold</span>
+                          <span className="font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">${params.wealth_threshold}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="500"
+                          max="10000"
+                          step="500"
+                          value={params.wealth_threshold || 2000}
+                          onChange={(e) => setParams({ ...params, wealth_threshold: Number(e.target.value) })}
+                          className="range-slider w-full accent-indigo-500 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer"
+                          style={{ background: `linear-gradient(90deg,#7c3aed ${pct(params.wealth_threshold||2000,500,10000)}%, rgba(255,255,255,0.04) ${pct(params.wealth_threshold||2000,500,10000)}%)` }}
+                        />
+                      </div>
+                    </>
                   )}
                 </motion.div>
               </AnimatePresence>
@@ -266,7 +334,7 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={runSimulation}
                 disabled={loading}
-                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:from-white/5 disabled:to-white/5 disabled:text-white/20 text-white rounded-2xl font-bold transition-all shadow-lg shadow-indigo-600/30 active:scale-[0.98] border border-indigo-500/20 flex items-center justify-center gap-2"
+                className="premium-button w-full py-5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -281,14 +349,14 @@ const Dashboard: React.FC = () => {
           </section>
         </div>
 
-        <div className="p-6 border-t border-white/5 bg-white/[0.02]">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center">
+        <div className="p-8 border-t border-white/5 bg-white/[0.01]">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center">
               <Info size={14} className="text-indigo-400" />
             </div>
-            <span className="text-sm font-semibold">System Status</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-white/60">System Status</span>
           </div>
-          <p className="text-xs text-white/40 leading-relaxed">
+          <p className="text-[11px] text-white/30 leading-relaxed font-medium">
             Simulation engine active. Modeling 1,000 agents across 5 neighborhoods.
           </p>
         </div>
@@ -297,32 +365,119 @@ const Dashboard: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
         {/* Header */}
-        <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-[#0a0a0c]/80 backdrop-blur-md z-10">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold">Simulation Dashboard</h2>
-            <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-widest border border-emerald-500/20">
+        <header className="h-24 border-b border-white/5 flex items-center justify-between px-10 bg-black/10 backdrop-blur-3xl z-10">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+              <h2 className="text-2xl font-bold tracking-tight">Simulation Dashboard</h2>
+              <span className="text-[10px] font-bold text-accent-cyan uppercase tracking-[0.3em] opacity-70">PoliSEE Simulation Lab / Core v1.0</span>
+            </div>
+            <div className="w-px h-8 bg-white/10" />
+            <div className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-widest border border-emerald-500/20 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Live Engine
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 text-white/40 hover:text-white transition-colors cursor-pointer">
-              <HelpCircle size={18} />
-              <span className="text-sm font-medium">Guide</span>
-            </div>
-            <div className="w-px h-6 bg-white/10" />
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600" />
-              <span className="text-sm font-semibold">Analyst Mode</span>
+          <div className="flex items-center gap-8">
+            <button 
+              onClick={() => setShowMethodology(true)}
+              className="method-button flex items-center gap-2 cursor-pointer"
+            >
+              <HelpCircle size={18} className="transition-transform" />
+              <span className="text-xs font-bold uppercase tracking-widest">Methodology</span>
+            </button>
+            <div className="w-px h-8 bg-white/10" />
+            <div className="flex items-center gap-4 bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[10px] font-bold shadow-lg shadow-indigo-500/20">PA</div>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold">PoliSEE Analyst</span>
+                <span className="text-[9px] text-white/40 uppercase font-bold tracking-tighter">Senior Researcher</span>
+              </div>
             </div>
           </div>
         </header>
 
-        {/* Dashboard Content */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          <div className="max-w-7xl mx-auto space-y-8">
+      {/* Methodology Modal */}
+      <AnimatePresence>
+        {showMethodology && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowMethodology(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-[#0d0d0f] border border-white/10 rounded-[2.5rem] p-10 max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <div className="text-accent-cyan text-[10px] font-bold uppercase tracking-[0.3em] mb-2">Technical Documentation</div>
+                  <h3 className="text-3xl font-bold">Simulation Methodology</h3>
+                </div>
+                <button 
+                  onClick={() => setShowMethodology(false)}
+                  className="p-2 hover:bg-white/5 rounded-full transition-colors"
+                >
+                  <ChevronRight className="rotate-90" />
+                </button>
+              </div>
+              
+              <div className="space-y-8 text-white/60 leading-relaxed">
+                <section>
+                  <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                    <Users size={16} className="text-indigo-400" />
+                    Agent-Based Modeling (ABM)
+                  </h4>
+                  <p>
+                    Our engine simulates 1,000 individual agents, each with unique income levels, consumption preferences, and social networks. Unlike aggregate models, ABM allows us to observe emergent behaviors like shadow markets and localized price spirals.
+                  </p>
+                </section>
+
+                <section>
+                  <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                    <Zap size={16} className="text-accent-gold" />
+                    Feedback Loops & Distortions
+                  </h4>
+                  <p>
+                    Every policy intervention includes a "Distortion Mechanism." For example, a rent subsidy doesn't just increase income; it also signals landlords to adjust prices based on perceived demand elasticity, modeling the real-world capture of subsidies by supply-side actors.
+                  </p>
+                </section>
+
+                <section>
+                  <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                    <Activity size={16} className="text-emerald-400" />
+                    Unintended Consequence Index (UCI)
+                  </h4>
+                  <p>
+                    The UCI is a composite metric calculated using the variance of price acceleration, Gini coefficient shifts, and compliance instability. A high UCI indicates that the policy's side effects are outweighing its intended benefits.
+                  </p>
+                </section>
+
+                <div className="pt-6 border-t border-white/5 flex justify-between items-center">
+                  <div className="text-[10px] font-bold text-white/20 uppercase tracking-widest">PoliSEE Research Initiative © 2025</div>
+                  <button 
+                    onClick={() => setShowMethodology(false)}
+                    className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    Close Documentation
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Dashboard Content */}
+      <div className="flex-1 overflow-y-auto p-10 custom-scrollbar relative z-10">
+        <div className="max-w-7xl mx-auto space-y-12">
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {[
                 {
                   label: "Avg Price",
@@ -359,44 +514,45 @@ const Dashboard: React.FC = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className="bg-white/5 border border-white/10 rounded-3xl p-6 hover:bg-white/[0.08] transition-all group"
+                  className="glass-card p-8 hover:bg-white/[0.06] transition-all group relative overflow-hidden"
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-3 rounded-2xl bg-white/5 group-hover:bg-white/10 transition-colors">
+                  <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all" />
+                  <div className="flex justify-between items-start mb-6 relative z-10">
+                    <div className="p-4 rounded-2xl bg-white/5 group-hover:bg-white/10 transition-colors shadow-inner">
                       {stat.icon}
                     </div>
-                    <div className={`flex items-center gap-1 text-xs font-bold ${stat.up ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {stat.up ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${stat.up ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                      {stat.up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                       {stat.trend}
                     </div>
                   </div>
-                  <div className="text-white/40 text-sm font-medium mb-1">{stat.label}</div>
-                  <div className={`text-2xl font-bold tracking-tight ${stat.color || ''}`}>{stat.value}</div>
+                  <div className="text-white/30 text-[10px] font-bold uppercase tracking-[0.2em] mb-2 relative z-10">{stat.label}</div>
+                  <div className={`text-3xl font-bold tracking-tight relative z-10 ${stat.color || ''}`}>{stat.value}</div>
                 </motion.div>
               ))}
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-[2.5rem] p-8">
-                <div className="flex items-center justify-between mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+              <div className="lg:col-span-2 glass-card p-10">
+                <div className="flex items-center justify-between mb-10">
                   <div>
-                    <h3 className="text-xl font-bold mb-1">Market Dynamics</h3>
-                    <p className="text-sm text-white/40">Price and stress evolution over 24 months</p>
+                    <h3 className="text-2xl font-bold mb-2">Market Dynamics</h3>
+                    <p className="text-xs font-medium text-white/30 uppercase tracking-widest">Price and stress evolution over 24 months</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-4">
                     <motion.button
                       onClick={exportToCSV}
                       disabled={!history || history.length === 0}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-300 hover:from-emerald-500/30 hover:to-teal-500/30 hover:border-emerald-400/50 hover:text-emerald-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-emerald-500/20 disabled:hover:to-teal-500/20 disabled:hover:border-emerald-500/30 disabled:hover:text-emerald-300 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-white/60 hover:bg-white/10 hover:text-white transition-all disabled:opacity-30"
                     >
                       Export CSV
                     </motion.button>
                   </div>
                 </div>
-                <div className="h-[400px]">
+                <div className="h-[450px]">
                   <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-white/20">Loading Visualizer...</div>}>
                     <Charts history={history} />
                   </Suspense>
@@ -404,47 +560,40 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Analysis Panel */}
-              <div className="space-y-8">
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-8 shadow-xl shadow-indigo-600/10 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                    <Zap size={120} />
+              <div className="space-y-10">
+                <div className="bg-gradient-to-br from-indigo-600/90 to-purple-700/90 backdrop-blur-2xl rounded-[2.5rem] p-10 shadow-2xl shadow-indigo-600/20 relative overflow-hidden group border border-white/10">
+                  <div className="absolute -right-10 -top-10 p-8 opacity-10 group-hover:scale-110 transition-transform duration-1000">
+                    <Zap size={200} />
                   </div>
-                  <h3 className="text-xl font-bold mb-4 relative z-10">
-                    AI Explanation {languageMode === "technical" && "(Technical)"}
+                  <h3 className="text-2xl font-bold mb-6 relative z-10 flex items-center gap-3">
+                    AI Insights
+                    {languageMode === "technical" && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded uppercase tracking-widest">Technical</span>}
                   </h3>
-                  <div className="text-white/80 text-sm leading-relaxed mb-6 relative z-10">
+                  <div className="text-white/90 text-sm leading-relaxed mb-8 relative z-10 font-medium">
                     {languageMode === "technical" ? (
-                      <div className="space-y-3">
+                      <div className="space-y-5">
                         {analysis ? (
                           <>
-                            <div className="grid grid-cols-2 gap-4 text-xs">
-                              <div>
-                                <span className="text-white/60">UCI Score:</span>
-                                <span className="ml-2 font-mono">{analysis.unintended_consequence_index.toFixed(3)}</span>
+                            <div className="grid grid-cols-2 gap-6">
+                              <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+                                <div className="text-[9px] uppercase tracking-widest text-white/40 mb-1">UCI Score</div>
+                                <div className="font-mono text-lg">{analysis.unintended_consequence_index.toFixed(3)}</div>
                               </div>
-                              <div>
-                                <span className="text-white/60">Price Acceleration:</span>
-                                <span className="ml-2 font-mono">{analysis.metrics.price_acceleration.toFixed(3)}</span>
-                              </div>
-                              <div>
-                                <span className="text-white/60">Volatility:</span>
-                                <span className="ml-2 font-mono">{analysis.metrics.volatility.toFixed(3)}</span>
-                              </div>
-                              <div>
-                                <span className="text-white/60">Compliance Instability:</span>
-                                <span className="ml-2 font-mono">{analysis.metrics.compliance_instability.toFixed(3)}</span>
+                              <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
+                                <div className="text-[9px] uppercase tracking-widest text-white/40 mb-1">Acceleration</div>
+                                <div className="font-mono text-lg">{analysis.metrics.price_acceleration.toFixed(3)}</div>
                               </div>
                             </div>
-                            <div className="pt-3 border-t border-white/20">
-                              <p className="text-xs text-white/70">{explanationText}</p>
+                            <div className="pt-5 border-t border-white/10">
+                              <p className="text-xs text-white/70 leading-relaxed">{explanationText}</p>
                             </div>
                           </>
                         ) : (
-                          <p>Run a simulation to generate detailed technical analysis.</p>
+                          <p className="text-white/40 italic">Run a simulation to generate detailed technical analysis.</p>
                         )}
                       </div>
                     ) : (
-                      <p>
+                      <p className="leading-relaxed">
                         {explanationText ?
                           explanationText.replace(/Rapid price acceleration detected/g, "Prices are rising quickly")
                             .replace(/score=/g, "at ")
@@ -466,47 +615,35 @@ const Dashboard: React.FC = () => {
                   </div>
                   <motion.button
                     onClick={() => setLanguageMode(languageMode === "layman" ? "technical" : "layman")}
-                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full py-3 bg-white text-slate-800 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all duration-300 relative z-10 flex items-center justify-center gap-2 shadow-lg shadow-white/20 hover:shadow-white/30 border border-white/30 hover:border-white/50"
+                    className="premium-button tech-toggle w-full py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all relative z-10 flex items-center justify-center gap-3"
                   >
-                    <motion.div
-                      animate={{ rotate: languageMode === "layman" ? 0 : 180 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Languages size={16} className="text-slate-600" />
-                    </motion.div>
-                    <span className="relative">
-                      {languageMode === "layman" ? "Technical Details" : "Simple Explanation"}
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"
-                        initial={false}
-                        animate={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                      >
-                        {languageMode === "layman" ? "Technical Details" : "Simple Explanation"}
-                      </motion.div>
-                    </span>
+                    <Languages size={16} />
+                    {languageMode === "layman" ? "Technical Mode" : "Layman Mode"}
                   </motion.button>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-8">
-                  <h3 className="text-xl font-bold mb-6">Recommendations</h3>
-                  <div className="space-y-4">
+                <div className="glass-card p-10">
+                  <h3 className="text-xl font-bold mb-8 flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
+                    Recommendations
+                  </h3>
+                  <div className="space-y-5">
                     {recommendations.length > 0 ? (
                       recommendations.map((rec, i) => (
-                        <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-indigo-500/30 transition-all group">
-                          <div className="w-10 h-10 shrink-0 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                        <div key={i} className="flex gap-5 p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-indigo-500/30 transition-all group">
+                          <div className="w-10 h-10 shrink-0 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all shadow-inner">
                             <ChevronRight size={18} />
                           </div>
-                          <p className="text-sm text-white/60 group-hover:text-white transition-colors leading-snug">
+                          <p className="text-xs font-medium text-white/50 group-hover:text-white/90 transition-colors leading-relaxed">
                             {rec}
                           </p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-8 text-white/20 italic text-sm">
-                        No recommendations available yet.
+                      <div className="text-center py-10 text-white/20 italic text-xs uppercase tracking-widest">
+                        Awaiting Simulation Data
                       </div>
                     )}
                   </div>
@@ -516,48 +653,146 @@ const Dashboard: React.FC = () => {
 
             {/* Neighborhoods Grid */}
             <section>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold">Neighborhood Snapshots</h3>
-                <span className="text-sm text-indigo-400 font-semibold cursor-pointer hover:underline">View All Districts</span>
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-2xl font-bold">Neighborhood Topology</h3>
+                  <div className="px-3 py-1 rounded-lg bg-white/5 text-[10px] font-bold text-white/40 border border-white/10 uppercase tracking-widest">
+                    N=5 DISTRICTS
+                  </div>
+                </div>
+                <span className="text-xs text-indigo-400 font-bold uppercase tracking-widest cursor-pointer hover:text-indigo-300 transition-colors flex items-center gap-2 group">
+                  Spatial Analysis <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
                 {neighborhoods ? (
                   Object.entries(neighborhoods).map(([name, data]: [string, any]) => (
                     <motion.div
                       key={name}
-                      whileHover={{ y: -5 }}
-                      className="bg-white/5 border border-white/10 rounded-3xl p-6 hover:bg-white/[0.08] transition-all"
+                      whileHover={{ y: -8, backgroundColor: "rgba(255,255,255,0.06)" }}
+                      className="glass-card p-8 transition-all relative overflow-hidden group"
                     >
-                      <div className="text-xs font-bold text-white/40 uppercase tracking-widest mb-4">{name}</div>
-                      <div className="space-y-4">
+                      <div className="absolute -right-6 -top-6 p-4 opacity-5 group-hover:opacity-10 group-hover:scale-110 transition-all duration-500">
+                        <Globe size={80} />
+                      </div>
+                      <div className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-6">{name}</div>
+                      <div className="space-y-6">
                         <div>
-                          <div className="text-2xl font-bold">${data.price.toFixed(1)}</div>
-                          <div className="text-[10px] text-white/40">Current Price</div>
+                          <div className="text-3xl font-bold tracking-tight">${data.price.toFixed(1)}</div>
+                          <div className="text-[9px] text-white/30 font-bold uppercase tracking-widest mt-1">Market Price</div>
                         </div>
-                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-indigo-500"
-                            style={{ width: `${Math.min(100, (data.price / 500) * 100)}%` }}
-                          />
+                        
+                        <div className="space-y-3">
+                          <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest">
+                            <span className="text-white/30">Supply Level</span>
+                            <span className={data.supply < 0.3 ? "text-rose-400" : "text-emerald-400"}>
+                              {Math.round(data.supply * 100)}%
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden shadow-inner">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${Math.min(100, data.supply * 100)}%` }}
+                              className={`h-full shadow-[0_0_10px_rgba(0,0,0,0.5)] ${data.supply < 0.3 ? "bg-gradient-to-r from-rose-500 to-orange-500" : "bg-gradient-to-r from-emerald-500 to-teal-500"}`}
+                            />
+                          </div>
                         </div>
-                        <div className="flex justify-between text-[10px] font-bold">
-                          <span className="text-white/40">SUPPLY</span>
-                          <span className={data.supply < 20 ? "text-rose-400" : "text-emerald-400"}>
-                            {data.supply.toFixed(0)} units
-                          </span>
+
+                        <div className="pt-6 border-t border-white/5 flex justify-between items-center">
+                          <div className="text-[9px] font-bold text-white/20 uppercase tracking-widest">Stability</div>
+                          <div className={`w-2.5 h-2.5 rounded-full shadow-lg ${data.price > 300 ? "bg-amber-500 animate-pulse shadow-amber-500/20" : "bg-emerald-500 shadow-emerald-500/20"}`} />
                         </div>
                       </div>
                     </motion.div>
                   ))
                 ) : (
                   Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-40 bg-white/5 border border-white/10 rounded-3xl animate-pulse" />
+                    <div key={i} className="h-64 glass-card animate-pulse" />
                   ))
                 )}
               </div>
             </section>
-          </div>
+
+            {/* Simulation Log / Console */}
+            <section className="glass-card overflow-hidden border-white/5">
+              <div className="px-10 py-6 border-b border-white/5 bg-white/[0.01] flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">Engine Console Output</span>
+                </div>
+                <div className="text-[9px] font-mono text-white/20 font-bold tracking-widest">POLISEE_CORE_V1.0.0_STABLE</div>
+              </div>
+              <div className="p-10 font-mono text-[11px] space-y-3 max-h-64 overflow-y-auto custom-scrollbar bg-black/40">
+                <div className="text-emerald-500/60 flex gap-3">
+                  <span className="opacity-30">08:00:01</span>
+                  <span>[SYSTEM] Initializing agent population (N=1000)...</span>
+                </div>
+                <div className="text-emerald-500/60 flex gap-3">
+                  <span className="opacity-30">08:00:02</span>
+                  <span>[SYSTEM] Calibrating neighborhood price elasticities...</span>
+                </div>
+                {history.length > 0 && (
+                  <>
+                    <div className="text-indigo-400/60 flex gap-3">
+                      <span className="opacity-30">08:00:05</span>
+                      <span>[POLICY] Applying {policyType.replace(/_/g, ' ')} intervention...</span>
+                    </div>
+                    <div className="text-white/40 flex gap-3">
+                      <span className="opacity-30">08:00:10</span>
+                      <span>[ENGINE] Step 1: Market equilibrium reached at avg_price=${history[0].avg_price.toFixed(2)}</span>
+                    </div>
+                    <div className="text-white/40 flex gap-3">
+                      <span className="opacity-30">08:00:25</span>
+                      <span>[ENGINE] Step 12: Mid-point analysis complete. Gini={history[11]?.gini.toFixed(3)}</span>
+                    </div>
+                    <div className="text-white/40 flex gap-3">
+                      <span className="opacity-30">08:00:45</span>
+                      <span>[ENGINE] Step 24: Simulation cycle finished. Generating emergence report...</span>
+                    </div>
+                    <div className="text-emerald-400 flex gap-3 font-bold">
+                      <span className="opacity-30">08:00:46</span>
+                      <span>[SUCCESS] Analysis complete. UCI={analysis?.unintended_consequence_index.toFixed(3)}</span>
+                    </div>
+                  </>
+                )}
+                {!loading && history.length === 0 && (
+                  <div className="text-white/20 italic flex gap-3">
+                    <span className="opacity-30">--:--:--</span>
+                    <span>Waiting for simulation trigger...</span>
+                  </div>
+                )}
+                {loading && (
+                  <div className="text-indigo-400 animate-pulse flex gap-3">
+                    <span className="opacity-30">--:--:--</span>
+                    <span>[RUNNING] Processing stochastic matrices...</span>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="max-w-7xl mx-auto mt-20 pb-12 border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center border border-white/10">
+                  <Activity size={14} className="text-accent-cyan" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold tracking-tight">poliSEE</span>
+                  <span className="text-[10px] text-white/20 uppercase tracking-widest">PoliSEE Research Initiative</span>
+                </div>
+              </div>
+              <div className="flex gap-8 text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">
+                <a href="#" className="hover:text-white transition-colors">Documentation</a>
+                <a href="#" className="hover:text-white transition-colors">API Reference</a>
+                <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+                <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              </div>
+              <div className="text-[10px] font-mono text-white/20">
+                © 2025 POLISEE RESEARCH INITIATIVE. ALL RIGHTS RESERVED.
+              </div>
+            </footer>
         </div>
+      </div>
       </main>
     </div>
   );
