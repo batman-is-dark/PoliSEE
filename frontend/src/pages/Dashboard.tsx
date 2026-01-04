@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings2,
@@ -60,6 +60,7 @@ const Dashboard: React.FC = () => {
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [languageMode, setLanguageMode] = useState<"layman" | "technical">("layman");
   const [showMethodology, setShowMethodology] = useState(false);
+  const debounceRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (policyType === "housing_rent_subsidy") {
@@ -73,7 +74,7 @@ const Dashboard: React.FC = () => {
     }
   }, [policyType]);
 
-  const runSimulation = async () => {
+  const runSimulation = useCallback(async () => {
     setLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -92,11 +93,20 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [policyType, params]);
 
   useEffect(() => {
     runSimulation();
-  }, []);
+  }, []); // Initial load
+
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      runSimulation();
+    }, 500); // Debounce 500ms
+  }, [params, runSimulation]);
 
   const exportToCSV = () => {
     if (!history || history.length === 0) return;
